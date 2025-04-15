@@ -1,1 +1,84 @@
+// drink-tea: dApp for deploying ERC-20 and ERC-721 contracts
+
+// 1. Install these dependencies:
+// npm install next react react-dom ethers web3modal tailwindcss autoprefixer postcss
+// npx tailwindcss init -p
+
+// tailwind.config.js
+module.exports = {
+  content: ["./pages/**/*.{js,ts,jsx,tsx}", "./components/**/*.{js,ts,jsx,tsx}"],
+  theme: { extend: {} },
+  plugins: [],
+};
+
+// styles/globals.css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+// utils/deploy.js
+import { ethers } from "ethers";
+
+const erc20ABI = [
+  "function name() view returns (string)",
+  "function symbol() view returns (string)",
+  "function totalSupply() view returns (uint256)",
+];
+
+export async function deployERC20(signer, name, symbol, supply) {
+  const factory = new ethers.ContractFactory(erc20ABI, bytecodeERC20, signer);
+  const contract = await factory.deploy(name, symbol, supply);
+  await contract.deployed();
+  return contract;
+}
+
+// Replace `bytecodeERC20` with your actual compiled contract bytecode
+
+// components/ConnectWallet.js
+import { useEffect, useState } from "react";
+import Web3Modal from "web3modal";
+import { ethers } from "ethers";
+
+export default function ConnectWallet({ onConnect }) {
+  const [account, setAccount] = useState(null);
+
+  async function connectWallet() {
+    const web3Modal = new Web3Modal();
+    const instance = await web3Modal.connect();
+    const provider = new ethers.providers.Web3Provider(instance);
+    const signer = provider.getSigner();
+    const address = await signer.getAddress();
+    setAccount(address);
+    onConnect(signer);
+  }
+
+  return (
+    <button
+      className="bg-green-600 text-white py-2 px-4 rounded"
+      onClick={connectWallet}
+    >
+      {account ? `Connected: ${account.slice(0, 6)}...` : "Connect Wallet"}
+    </button>
+  );
+}
+
+// pages/index.js
+import { useState } from "react";
+import ConnectWallet from "../components/ConnectWallet";
+
+export default function Home() {
+  const [signer, setSigner] = useState(null);
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-gray-100">
+      <h1 className="text-4xl font-bold mb-6">🍵 Drink Tea - Web3 dApp</h1>
+      <ConnectWallet onConnect={setSigner} />
+      {signer && (
+        <p className="mt-4 text-green-700">Wallet Connected, ready to deploy contracts!</p>
+      )}
+    </div>
+  );
+}
+
+// public/index.html will be generated automatically by Next.js
 
